@@ -41,7 +41,7 @@ object CRF extends App {
     // dev=5527, train=38219, test=5462
 //    val data = readWsjPos("/Users/fayimora/Downloads/wsj-pos/dev.txt")
     val train = readWsjPos("/Users/fayimora/Downloads/wsj-pos/train.txt").take(1000)
-    val test = readWsjPos("/Users/fayimora/Downloads/wsj-pos/dev.txt")
+    val test = readWsjPos("/Users/fayimora/Downloads/wsj-pos/dev.txt").take(500)
 
     val words = (train ++ test).flatMap(_._1).distinct
     val tags = (train ++ test).flatMap(_._2).distinct
@@ -114,8 +114,8 @@ object CRF extends App {
     val localIndex = new SimpleFeatureIndex(Features)
     val transIndex = new SimpleFeatureIndex(TransitionFeats)
 
-    val ak = 3
-    val bk = 3
+    val ak = 10
+    val bk = 10
 
     // model domains
     @domain case class Theta(a: Mat, b: Mat, w: Vect, wb: Vect)
@@ -132,12 +132,11 @@ object CRF extends App {
     }
 
     def model(w: Thetas.Term)(x: X.Term)(y: Y.Term) = {
-      sum(0 until x.length) { i => w.w dot (w.a * sigmVec(w.b * local(x,y,i))) } +
+      sum(0 until x.length) { i => w.w dot sigmVec(w.b * local(x,y,i)) } +
        sum(0 until x.length - 1) { i => w.wb dot transition(x,y,i) }
     } subjectTo (y.length === x.length) argmaxBy Argmaxer.maxProduct
 
     val init = Settings(Thetas.createRandomSetting(random.nextGaussian() * 0.1))
-//    val init = Settings(Thetas.createZeroSetting())
     val params = AdaGradParameters(10, 0.1, 0.1, initParams = init) // epochs, alpha, delta
 
     lazy val thetaStar =
@@ -174,9 +173,11 @@ object CRF extends App {
     errs / total
   }
 
-//  val linErr = time { run(CRFModel, Data.test) }
-//  println(s"===== linErr: ${linErr*100}% error =====")
+  println("Running Linear CRF Model")
+  val linErr = time { run(CRFModel, Data.test) }
+  println(s"===== linErr: ${linErr*100}% error =====")
 
+  println("Running Neural CRF Model")
   val neuralErr = time { run(NeuralModel, Data.test) }
   println(s"===== neuralErr: ${neuralErr*100}% error =====")
 
