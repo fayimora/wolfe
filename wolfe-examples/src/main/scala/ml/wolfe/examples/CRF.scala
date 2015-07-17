@@ -155,7 +155,7 @@ object CRF extends App {
     val mins = TimeUnit.MILLISECONDS.toMinutes(millis)
     val secs = TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis))
 
-    println(s"Elapsed time: ${mins} mins, ${secs} secs")
+    println(s"Elapsed time: $mins mins, $secs secs")
     result
   }
 
@@ -165,7 +165,7 @@ object CRF extends App {
     for ((x, y) <- test) {
       val yh = m.predict(x)
       assert(yh.length == y.length)
-      for (i <- 0 until y.length) {
+      for (i <- y.indices) {
         if (yh(i) != y(i)) errs += 1.0
         total += 1.0
       }
